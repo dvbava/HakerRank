@@ -26,14 +26,14 @@ namespace Interview.Puzzles
             int count = 0;
             while (n != 0)
             {
-                n = FlipBitsAtIndex(n, FirstSetBitIndex(n));
+                n = FlipBitsAtIndex(n, IndexOfFirstSetBit(n));
                 //Console.WriteLine(Convert.ToString(n, toBase: 2));
                 count++;
             }
             return count;
         }
 
-        public static int FirstSetBitIndex(int n)
+        public static int IndexOfFirstSetBit(int n)
         {
             int count = 0;
             while (n > 0)
