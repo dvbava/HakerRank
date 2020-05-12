@@ -60,6 +60,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AutoMoveController.cs" />
+    <Compile Include="AutoMovetoTextConverter.cs" />
     <Compile Include="Jiggler.cs" />
     <Compile Include="RelayCommand.cs" />
     <Page Include="MainWindow.xaml">
@@ -97,7 +99,7 @@
     <Resource Include="Mouse.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="down_arrow.png" />
+    <Resource Include="minimise.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

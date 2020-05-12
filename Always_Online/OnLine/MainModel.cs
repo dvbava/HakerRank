@@ -1,20 +1,35 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace OnLine
 {
-    public class MainModel
+    public class MainModel : INotifyPropertyChanged
     {
         public event EventHandler ToTrayHandler;
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private AutoMoveController moveController = null;
+        private bool autoMove;
+        private string autoMoveStatus;
 
         public MainModel()
         {
             AutoMove = true;
+            moveController = new AutoMoveController();
+            moveController.StatusChanged += MoveController_StatusChanged;
 
             this.AutoMoveCommand = new RelayCommand<bool>(flag =>
             {
                 AutoMove = flag;
-                if (AutoMove) StartAutoMove();
+                if (AutoMove)
+                {
+                    moveController.Start();
+                }
+                else
+                {
+                    moveController.Stop();
+                }
             });
 
             this.ToTrayCommand = new RelayCommand<object>(obj =>
@@ -22,26 +37,37 @@ namespace OnLine
                 ToTrayHandler?.Invoke(this, new EventArgs());
             });
 
-            StartAutoMove();
+            moveController.Start();
         }
 
-        private void StartAutoMove()
+        private void MoveController_StatusChanged(object sender, string message)
         {
-            Task.Run(async () =>
-            {
-                var zig = 1;
-
-                while (AutoMove)
-                {
-                    Jiggler.Jiggle(4 * zig, 4 * zig);
-                    zig = zig == 1 ? -1 : 1;
-
-                    await Task.Delay(10000);
-                }
-            });
+            AutoMoveStatus = message;
         }
 
-        public bool AutoMove { get; set; }
+        public bool AutoMove
+        {
+            get { return autoMove; }
+            set
+            {
+                autoMove = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string AutoMoveStatus { get => autoMoveStatus; 
+            set
+            {
+                autoMoveStatus = value;
+                OnPropertyChanged();
+            }
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
         public bool InTray { get; set; }
 
         public RelayCommand<bool> AutoMoveCommand { get; set; }
