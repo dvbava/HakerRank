@@ -1,0 +1,124 @@
+using System.Globalization;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+
+class PagedApiClient
+{
+    private static readonly HttpClient _http = new() { BaseAddress = new Uri("https://jsonmock.hackerrank.com/api/transactions/") };
+
+    public async Task<List<Result>> DownloadPagedData(int locationId, string transactionType)
+    {
+        if (string.IsNullOrWhiteSpace(transactionType))
+            return [];
+
+        var allData = await FetchAllPages(transactionType);
+
+        var filtered = allData
+            .Where(d => d.Location != null && d.Location.Id == locationId);
+
+        var results = new List<Result>();
+
+        foreach (var item in filtered)
+        {
+            var amount = ParseAmount(item.Amount);
+            results.Add(new Result(item.UserId, (int)amount));
+        }
+
+        return results;
+    }
+
+    private async Task<List<ResponseData>> FetchAllPages(string transactionType)
+    {
+        var data = new List<ResponseData>();
+        var page = 1;
+        var totalPages = 1;
+
+        do
+        {
+            var response = await _http.GetFromJsonAsync<Response>($"search?txnType={transactionType}&page={page}");
+            if (response == null || response.Data == null)
+                break; // no more data, stop paging
+
+            totalPages = response.TotalPages;
+            data.AddRange(response.Data);
+            page++;
+        }
+        while (page <= totalPages);
+
+        return data;
+    }
+
+    private static decimal ParseAmount(string s)
+    {
+        var cleaned = s.Replace("$", "").Replace(",", "");
+        return decimal.Parse(cleaned, CultureInfo.InvariantCulture);
+    }
+}
+
+
+
+public record Result(int UserId, int Amount);
+
+// Remember to adjust C# property names, as they do NOT match JSON names used in API
+public class Response
+{
+    [JsonPropertyName("page")]
+    public int Page { get; set; }
+
+    [JsonPropertyName("per_page")]
+    public int PerPage { get; set; }
+
+    [JsonPropertyName("total")]
+    public int Total { get; set; }
+
+    [JsonPropertyName("total_pages")]
+    public int TotalPages { get; set; }
+
+    [JsonPropertyName("data")]
+    public ResponseData[] Data { get; set; } = Array.Empty<ResponseData>();
+}
+
+public class ResponseData
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("timestamp")]
+    public long Timestamp { get; set; }
+
+    [JsonPropertyName("userId")]
+    public int UserId { get; set; }
+
+    [JsonPropertyName("userName")]
+    public string UserName { get; set; }
+
+    [JsonPropertyName("txnType")]
+    public string TxnType { get; set; }
+
+    [JsonPropertyName("amount")]
+    public string Amount { get; set; }
+
+    [JsonPropertyName("location")]
+    public Location Location { get; set; }
+
+    [JsonPropertyName("ip")]
+    public string IP { get; set; }
+}
+
+public class Location
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+    public string Address { get; set; }
+    public string City { get; set; }
+    public int ZipCode { get; set; }
+}
+
+class Solution
+{
+    public static async Task Main(string[] args)
+    {
+        var dataProvider = new PagedApiClient();
+        var result = await dataProvider.DownloadPagedData(1, "debit");
+    }
+}
